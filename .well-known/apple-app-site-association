@@ -1,0 +1,11 @@
+{
+    "applinks": {
+      "apps": [],
+      "details": [
+        {
+          "appID": "82T5637HG7.com.jacobgaluten.meadow",
+          "paths": ["/invite/*"]
+        }
+      ]
+    }
+  }
