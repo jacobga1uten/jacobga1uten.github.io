@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#17172a">
+    <title>Join a friend on Meadow</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #17172a;
+        color: #f4f1ff;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-height: 100svh;
+        margin: 0;
+        padding: max(28px, env(safe-area-inset-top)) 24px max(34px, env(safe-area-inset-bottom));
+        display: grid;
+        place-items: center;
+        background: linear-gradient(180deg, #121220 0%, #1f1f38 58%, #182e25 100%);
+      }
+
+      main {
+        width: min(100%, 430px);
+        text-align: center;
+      }
+
+      .icon {
+        width: 92px;
+        height: 92px;
+        border-radius: 20px;
+        margin-bottom: 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 42px;
+        line-height: 1.05;
+        letter-spacing: 0;
+        color: #e0d7ff;
+      }
+
+      p {
+        margin: 16px auto 30px;
+        max-width: 330px;
+        font-size: 17px;
+        line-height: 1.45;
+        color: rgba(244, 241, 255, 0.76);
+      }
+
+      button, a {
+        width: 100%;
+        min-height: 54px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(224, 215, 255, 0.28);
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      button {
+        background: #5c5395;
+        color: #fff;
+      }
+
+      a {
+        margin-top: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: #d9d0ff;
+      }
+
+      button:disabled {
+        cursor: default;
+        opacity: 0.45;
+      }
+
+      #status {
+        min-height: 22px;
+        margin: 14px 0 0;
+        font-size: 14px;
+        color: #f1cf72;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="icon" src="/icon.png" alt="Meadow app icon">
+      <h1>Meadow</h1>
+      <p>A friend invited you to meditate with them. Install the beta, then create your account to receive their request.</p>
+      <button id="install" type="button">Get Meadow Beta</button>
+      <a id="open-app" href="#">I already have Meadow</a>
+      <div id="status" role="status" aria-live="polite"></div>
+    </main>
+
+    <script>
+      const TESTFLIGHT_URL = "https://testflight.apple.com/join/jeCxKJHR";
+      const INVITE_PATTERN = /^\/invite\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/?$/i;
+      const match = window.location.pathname.match(INVITE_PATTERN);
+      const inviteUserId = match ? match[1] : "";
+      const inviteUrl = inviteUserId
+        ? `${window.location.origin}/invite/${encodeURIComponent(inviteUserId)}`
+        : "";
+      const installButton = document.getElementById("install");
+      const openAppLink = document.getElementById("open-app");
+      const status = document.getElementById("status");
+      const testFlightReady = /^https:\/\/testflight\.apple\.com\/join\/[A-Za-z0-9]+$/.test(TESTFLIGHT_URL);
+
+      async function copyInvite() {
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+          return true;
+        } catch {
+          const input = document.createElement("textarea");
+          input.value = inviteUrl;
+          input.setAttribute("readonly", "");
+          input.style.position = "fixed";
+          input.style.opacity = "0";
+          document.body.appendChild(input);
+          input.select();
+          const copied = document.execCommand("copy");
+          input.remove();
+          return copied;
+        }
+      }
+
+      if (!inviteUserId) {
+        installButton.disabled = true;
+        openAppLink.hidden = true;
+        status.textContent = "This invitation link is not valid.";
+      } else {
+        openAppLink.href = `meadow://invite/${encodeURIComponent(inviteUserId)}`;
+        installButton.addEventListener("click", async () => {
+          if (!testFlightReady) {
+            status.textContent = "The Meadow beta link has not been configured yet.";
+            return;
+          }
+
+          installButton.disabled = true;
+          installButton.textContent = "Preparing invitation";
+          const copied = await copyInvite();
+          if (!copied) {
+            installButton.disabled = false;
+            installButton.textContent = "Try again";
+            status.textContent = "Allow clipboard access so Meadow can preserve this invitation.";
+            return;
+          }
+
+          status.textContent = "Invitation saved. Opening TestFlight...";
+          window.location.assign(TESTFLIGHT_URL);
+        });
+      }
+    </script>
+  </body>
+</html>
